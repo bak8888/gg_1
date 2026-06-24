@@ -1,25 +1,29 @@
-import { useEffect, useState } from 'react';
-import { matches } from './data/matches';
+import { useEffect, useMemo, useState } from 'react';
+import { matches as sampleMatches } from './data/matches';
 import HomePage from './pages/HomePage';
+import MatchManagerPage from './pages/MatchManagerPage';
 import ResultPage from './pages/ResultPage';
 import SimulationPage from './pages/SimulationPage';
-import { PredictionResult } from './types';
+import { Match, PredictionResult } from './types';
 import { createPrediction } from './utils/predictionEngine';
+import { loadUserMatches } from './utils/storage';
 import './styles/global.css';
 
-type View = 'home' | 'preparing' | 'simulation' | 'result';
+type View = 'home' | 'manager' | 'preparing' | 'simulation' | 'result';
 
 const preparationSteps = ['최근 흐름 분석 중…', '공격 패턴 계산 중…', '수비 균열 탐색 중…', '예측 시뮬레이션 준비 완료'];
 
 export default function App() {
   const [view, setView] = useState<View>('home');
+  const [userMatches, setUserMatches] = useState<Match[]>(() => loadUserMatches());
+  const allMatches = useMemo(() => [...sampleMatches, ...userMatches], [userMatches]);
   const [matchId, setMatchId] = useState<string>();
   const [preparationStep, setPreparationStep] = useState(0);
-  const [prediction, setPrediction] = useState<PredictionResult>(() => createPrediction(matches[0]));
-  const selectedMatch = matches.find((match) => match.id === matchId) ?? matches[0];
+  const [prediction, setPrediction] = useState<PredictionResult>(() => createPrediction(allMatches[0]));
+  const selectedMatch = allMatches.find((match) => match.id === matchId) ?? allMatches[0];
 
   const startSimulation = (id: string) => {
-    const match = matches.find((item) => item.id === id) ?? matches[0];
+    const match = allMatches.find((item) => item.id === id) ?? allMatches[0];
     setMatchId(id);
     setPrediction(createPrediction(match));
     setPreparationStep(0);
@@ -43,6 +47,10 @@ export default function App() {
     };
   }, [view]);
 
+  if (view === 'manager') {
+    return <MatchManagerPage sampleMatches={sampleMatches} userMatches={userMatches} onChange={setUserMatches} onBack={goHome} />;
+  }
+
   if (view === 'preparing') {
     return <main className="page prep-page">
       <section className="prep-card">
@@ -65,5 +73,5 @@ export default function App() {
     return <ResultPage match={selectedMatch} prediction={prediction} onRestart={restartPrediction} onViewMatches={goHome} />;
   }
 
-  return <HomePage onSelectMatch={startSimulation} />;
+  return <HomePage matches={allMatches} onSelectMatch={startSimulation} onManageMatches={() => setView('manager')} />;
 }

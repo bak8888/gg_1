@@ -17,12 +17,15 @@ export interface Team {
   stats: TeamStats;
 }
 
+export type MatchSource = 'sample' | 'custom';
+
 export interface Match {
   id: string;
   league: string;
   homeTeam: Team;
   awayTeam: Team;
   kickoffTime: string;
+  source?: MatchSource;
 }
 
 export interface SimulationLogEntry {

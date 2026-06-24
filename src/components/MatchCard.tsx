@@ -30,6 +30,7 @@ export default function MatchCard({ match, onSelect }: { match: Match; onSelect:
   return <article className="match-card">
     <div className="card-topline">
       <p className="league">{match.league}</p>
+      <span className={match.source === 'custom' ? 'source-badge custom' : 'source-badge'}>{match.source === 'custom' ? '내가 추가한 경기' : '샘플 경기'}</span>
       <span className="kickoff-chip">{match.kickoffTime}</span>
     </div>
     <h2>{match.homeTeam.name} <span>vs</span> {match.awayTeam.name}</h2>
