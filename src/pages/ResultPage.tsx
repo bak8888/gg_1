@@ -1,8 +1,23 @@
+import { useState } from 'react';
 import { Match, PredictionResult } from '../types';
 
 const labels = { HOME: '홈승', DRAW: '무승부', AWAY: '원정승' } as const;
 
-export default function ResultPage({ match, prediction, onRestart, onViewMatches }: { match: Match; prediction: PredictionResult; onRestart: () => void; onViewMatches: () => void }) {
+const makeCopyText = (match: Match, prediction: PredictionResult) => `[졸라매치 예측]\n${match.homeTeam.name} vs ${match.awayTeam.name}\n예상 스코어: ${prediction.homeScore} - ${prediction.awayScore}\n예상 결과: ${labels[prediction.outcome]}\n신뢰도: ${prediction.confidence}%\n이 예측은 재미용 시뮬레이션이며 실제 결과를 보장하지 않습니다.`;
+
+export default function ResultPage({ match, prediction, onRestart, onViewMatches, onViewHistory }: { match: Match; prediction: PredictionResult; onRestart: () => void; onViewMatches: () => void; onViewHistory: () => void }) {
+  const [copyMessage, setCopyMessage] = useState('');
+  const summary = `${prediction.keyPoint} ${prediction.riskFactor}`;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(makeCopyText(match, prediction));
+      setCopyMessage('결과 요약이 복사되었습니다.');
+    } catch {
+      setCopyMessage('복사에 실패했습니다. 브라우저 권한을 확인해주세요.');
+    }
+  };
+
   return <main className="page result">
     <section className="result-card result-shell">
       <p className="league">Prediction Result</p>
@@ -40,10 +55,26 @@ export default function ResultPage({ match, prediction, onRestart, onViewMatches
           <ol>{prediction.simulationLog.map(log => <li key={`${log.second}-${log.text}`}><time>{String(log.second).padStart(2, '0')}초</time>{log.text}</li>)}</ol>
         </article>
       </div>
+
+      <section className="share-section" aria-label="공유용 요약 카드">
+        <h2>공유용 요약 카드</h2>
+        <article className="share-card">
+          <p>졸라매치 예측</p>
+          <h3>{match.homeTeam.name} vs {match.awayTeam.name}</h3>
+          <strong>{prediction.homeScore} : {prediction.awayScore}</strong>
+          <div><span>{labels[prediction.outcome]}</span><span>신뢰도 {prediction.confidence}%</span></div>
+          <em>{summary}</em>
+          <small>이 예측은 재미용 시뮬레이션이며 실제 결과를 보장하지 않습니다.</small>
+        </article>
+        <button onClick={handleCopy}>결과 요약 복사</button>
+        {copyMessage && <p className="copy-message">{copyMessage}</p>}
+      </section>
+
       <p className="disclaimer">이 예측은 재미용 시뮬레이션이며 실제 결과를 보장하지 않습니다.</p>
       <div className="result-actions">
         <button onClick={onRestart}>다시 예측하기</button>
         <button className="secondary-action" onClick={onViewMatches}>다른 경기 보기</button>
+        <button className="secondary-action" onClick={onViewHistory}>예측 기록 보기</button>
       </div>
     </section>
   </main>;

@@ -2,14 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { matches as sampleMatches } from './data/matches';
 import HomePage from './pages/HomePage';
 import MatchManagerPage from './pages/MatchManagerPage';
+import PredictionHistoryPage from './pages/PredictionHistoryPage';
 import ResultPage from './pages/ResultPage';
 import SimulationPage from './pages/SimulationPage';
-import { Match, PredictionResult } from './types';
+import { Match, PredictionHistoryItem, PredictionResult } from './types';
 import { createPrediction } from './utils/predictionEngine';
-import { loadUserMatches } from './utils/storage';
+import { addPredictionHistory, loadUserMatches } from './utils/storage';
 import './styles/global.css';
 
-type View = 'home' | 'manager' | 'preparing' | 'simulation' | 'result';
+type View = 'home' | 'manager' | 'history' | 'preparing' | 'simulation' | 'result';
 
 const preparationSteps = ['최근 흐름 분석 중…', '공격 패턴 계산 중…', '수비 균열 탐색 중…', '예측 시뮬레이션 준비 완료'];
 
@@ -31,7 +32,31 @@ export default function App() {
   };
 
   const goHome = () => setView('home');
+  const goHistory = () => setView('history');
   const restartPrediction = () => startSimulation(selectedMatch.id);
+
+
+  const completeSimulation = () => {
+    const historyItem: PredictionHistoryItem = {
+      id: `${selectedMatch.id}-${Date.now()}`,
+      savedAt: new Date().toISOString(),
+      league: selectedMatch.league,
+      homeTeamName: selectedMatch.homeTeam.name,
+      awayTeamName: selectedMatch.awayTeam.name,
+      kickoffTime: selectedMatch.kickoffTime,
+      expectedScore: { home: prediction.homeScore, away: prediction.awayScore },
+      expectedOutcome: prediction.outcome,
+      confidence: prediction.confidence,
+      reasons: prediction.reasons.slice(0, 3),
+      flowSummary: prediction.flowSummary,
+      keyPoint: prediction.keyPoint,
+      riskFactor: prediction.riskFactor,
+      simulationLog: prediction.simulationLog,
+      matchSource: selectedMatch.source ?? 'sample',
+    };
+    addPredictionHistory(historyItem);
+    setView('result');
+  };
 
   useEffect(() => {
     if (view !== 'preparing') return undefined;
@@ -51,6 +76,10 @@ export default function App() {
     return <MatchManagerPage sampleMatches={sampleMatches} userMatches={userMatches} onChange={setUserMatches} onBack={goHome} />;
   }
 
+  if (view === 'history') {
+    return <PredictionHistoryPage onBack={goHome} />;
+  }
+
   if (view === 'preparing') {
     return <main className="page prep-page">
       <section className="prep-card">
@@ -66,12 +95,12 @@ export default function App() {
   }
 
   if (view === 'simulation') {
-    return <SimulationPage match={selectedMatch} prediction={prediction} onComplete={() => setView('result')} />;
+    return <SimulationPage match={selectedMatch} prediction={prediction} onComplete={completeSimulation} />;
   }
 
   if (view === 'result') {
-    return <ResultPage match={selectedMatch} prediction={prediction} onRestart={restartPrediction} onViewMatches={goHome} />;
+    return <ResultPage match={selectedMatch} prediction={prediction} onRestart={restartPrediction} onViewMatches={goHome} onViewHistory={goHistory} />;
   }
 
-  return <HomePage matches={allMatches} onSelectMatch={startSimulation} onManageMatches={() => setView('manager')} />;
+  return <HomePage matches={allMatches} onSelectMatch={startSimulation} onManageMatches={() => setView('manager')} onViewHistory={goHistory} />;
 }
