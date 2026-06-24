@@ -1,0 +1,2 @@
+import { Match } from '../types';
+export default function MatchCard({ match, onSelect }: { match: Match; onSelect: (id: string) => void }) { return <article className="match-card"><p className="league">{match.league}</p><h2>{match.homeTeam.name} <span>vs</span> {match.awayTeam.name}</h2><p className="kickoff">경기시간: {match.kickoffTime}</p><button onClick={() => onSelect(match.id)}>예측 보기</button></article>; }
