@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { PredictionHistoryItem } from '../types';
+import { DataSource, PredictionHistoryItem } from '../types';
 import { clearPredictionHistory, deletePredictionHistory, loadPredictionHistory } from '../utils/storage';
 
 const labels = { HOME: '홈승', DRAW: '무승부', AWAY: '원정승' } as const;
@@ -9,7 +9,7 @@ const formatSavedAt = (value: string) => new Intl.DateTimeFormat('ko-KR', {
   timeStyle: 'short',
 }).format(new Date(value));
 
-const sourceLabels = { sample: '샘플 경기', custom: '사용자 추가 경기', api: 'API 경기' } as const;
+const sourceLabels: Record<DataSource, string> = { sample: '샘플 경기', custom: '사용자 추가 경기', 'mock-api': 'Mock API', api: '실시간 API 예정' };
 
 export default function PredictionHistoryPage({ onBack }: { onBack: () => void }) {
   const [history, setHistory] = useState<PredictionHistoryItem[]>(() => loadPredictionHistory());
@@ -49,7 +49,7 @@ export default function PredictionHistoryPage({ onBack }: { onBack: () => void }
         <div className="history-list" aria-label="저장된 예측 기록 목록">
           {history.map((record) => <article className={selectedId === record.id ? 'history-card active' : 'history-card'} key={record.id}>
             <button className="history-card-main" onClick={() => setSelectedId(record.id)}>
-              <span className={`source-badge ${record.matchSource === 'custom' ? 'custom' : ''}`}>{sourceLabels[record.matchSource]}</span>
+              <span className={`source-badge ${record.matchSource}`}>{sourceLabels[record.matchSource]}</span>
               <h2>{record.homeTeamName} vs {record.awayTeamName}</h2>
               <p>{record.league} · {record.kickoffTime}</p>
               <div className="history-meta">
