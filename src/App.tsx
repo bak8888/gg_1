@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { matches } from './data/matches';
 import HomePage from './pages/HomePage';
 import ResultPage from './pages/ResultPage';
@@ -7,11 +7,14 @@ import { PredictionResult } from './types';
 import { createPrediction } from './utils/predictionEngine';
 import './styles/global.css';
 
-type View = 'home' | 'simulation' | 'result';
+type View = 'home' | 'preparing' | 'simulation' | 'result';
+
+const preparationSteps = ['최근 흐름 분석 중…', '공격 패턴 계산 중…', '수비 균열 탐색 중…', '예측 시뮬레이션 준비 완료'];
 
 export default function App() {
   const [view, setView] = useState<View>('home');
   const [matchId, setMatchId] = useState<string>();
+  const [preparationStep, setPreparationStep] = useState(0);
   const [prediction, setPrediction] = useState<PredictionResult>(() => createPrediction(matches[0]));
   const selectedMatch = matches.find((match) => match.id === matchId) ?? matches[0];
 
@@ -19,15 +22,47 @@ export default function App() {
     const match = matches.find((item) => item.id === id) ?? matches[0];
     setMatchId(id);
     setPrediction(createPrediction(match));
-    setView('simulation');
+    setPreparationStep(0);
+    setView('preparing');
   };
+
+  const goHome = () => setView('home');
+  const restartPrediction = () => startSimulation(selectedMatch.id);
+
+  useEffect(() => {
+    if (view !== 'preparing') return undefined;
+
+    const stepTimer = window.setInterval(() => {
+      setPreparationStep((step) => Math.min(step + 1, preparationSteps.length - 1));
+    }, 650);
+    const finishTimer = window.setTimeout(() => setView('simulation'), 2600);
+
+    return () => {
+      window.clearInterval(stepTimer);
+      window.clearTimeout(finishTimer);
+    };
+  }, [view]);
+
+  if (view === 'preparing') {
+    return <main className="page prep-page">
+      <section className="prep-card">
+        <p className="league">Analysis Warm-up</p>
+        <h1>{selectedMatch.homeTeam.name} vs {selectedMatch.awayTeam.name}</h1>
+        <div className="prep-orb" aria-hidden="true" />
+        <ol className="prep-steps">
+          {preparationSteps.map((step, index) => <li className={index <= preparationStep ? 'active' : ''} key={step}>{step}</li>)}
+        </ol>
+        <p className="simulation-note">잠시 후 기존 30초 예측 시뮬레이션으로 이동합니다.</p>
+      </section>
+    </main>;
+  }
 
   if (view === 'simulation') {
     return <SimulationPage match={selectedMatch} prediction={prediction} onComplete={() => setView('result')} />;
   }
 
   if (view === 'result') {
-    return <ResultPage match={selectedMatch} prediction={prediction} onRestart={() => setView('home')} />;
+    return <ResultPage match={selectedMatch} prediction={prediction} onRestart={restartPrediction} onViewMatches={goHome} />;
   }
 
   return <HomePage onSelectMatch={startSimulation} />;
