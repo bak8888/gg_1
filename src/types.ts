@@ -25,6 +25,11 @@ export interface Match {
   kickoffTime: string;
 }
 
+export interface SimulationLogEntry {
+  second: number;
+  text: string;
+}
+
 export interface PredictionResult {
   matchId: string;
   outcome: PredictionOutcome;
@@ -32,6 +37,10 @@ export interface PredictionResult {
   awayScore: number;
   confidence: number;
   reasons: string[];
+  flowSummary: string;
+  keyPoint: string;
+  riskFactor: string;
+  simulationLog: SimulationLogEntry[];
   homePower: number;
   awayPower: number;
 }
