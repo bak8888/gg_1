@@ -1,4 +1,14 @@
-import { Match, TeamStats } from '../types';
+import { DataSource, Match, TeamStats } from '../types';
+
+
+const sourceLabels: Record<DataSource, string> = {
+  sample: '샘플 데이터',
+  custom: '내가 추가한 경기',
+  'mock-api': 'Mock API',
+  api: '실시간 API 예정',
+};
+
+const getSource = (match: Match): DataSource => match.source ?? 'sample';
 
 const statLabels: Array<{ key: keyof TeamStats; label: string; lowerIsBetter?: boolean }> = [
   { key: 'attackPower', label: '공격 성향' },
@@ -30,9 +40,10 @@ export default function MatchCard({ match, onSelect }: { match: Match; onSelect:
   return <article className="match-card">
     <div className="card-topline">
       <p className="league">{match.league}</p>
-      <span className={match.source === 'custom' ? 'source-badge custom' : 'source-badge'}>{match.source === 'custom' ? '내가 추가한 경기' : '샘플 경기'}</span>
+      <span className={`source-badge ${getSource(match)}`}>{sourceLabels[getSource(match)]}</span>
       <span className="kickoff-chip">{match.kickoffTime}</span>
     </div>
+    {match.lastUpdatedAt && <p className="updated-at">마지막 업데이트 {new Date(match.lastUpdatedAt).toLocaleString('ko-KR')}</p>}
     <h2>{match.homeTeam.name} <span>vs</span> {match.awayTeam.name}</h2>
     <div className="team-panels">
       <TeamPanel match={match} side="homeTeam" />

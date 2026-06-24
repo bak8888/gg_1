@@ -7,6 +7,7 @@ import ResultPage from './pages/ResultPage';
 import SimulationPage from './pages/SimulationPage';
 import { Match, PredictionHistoryItem, PredictionResult } from './types';
 import { createPrediction } from './utils/predictionEngine';
+import { getAllMatchesByProvider } from './utils/dataProvider';
 import { addPredictionHistory, loadUserMatches } from './utils/storage';
 import './styles/global.css';
 
@@ -17,7 +18,7 @@ const preparationSteps = ['최근 흐름 분석 중…', '공격 패턴 계산 �
 export default function App() {
   const [view, setView] = useState<View>('home');
   const [userMatches, setUserMatches] = useState<Match[]>(() => loadUserMatches());
-  const allMatches = useMemo(() => [...sampleMatches, ...userMatches], [userMatches]);
+  const allMatches = useMemo(() => getAllMatchesByProvider(userMatches), [userMatches]);
   const [matchId, setMatchId] = useState<string>();
   const [preparationStep, setPreparationStep] = useState(0);
   const [prediction, setPrediction] = useState<PredictionResult>(() => createPrediction(allMatches[0]));
@@ -102,5 +103,5 @@ export default function App() {
     return <ResultPage match={selectedMatch} prediction={prediction} onRestart={restartPrediction} onViewMatches={goHome} onViewHistory={goHistory} />;
   }
 
-  return <HomePage matches={allMatches} onSelectMatch={startSimulation} onManageMatches={() => setView('manager')} onViewHistory={goHistory} />;
+  return <HomePage userMatches={userMatches} onSelectMatch={startSimulation} onManageMatches={() => setView('manager')} onViewHistory={goHistory} />;
 }

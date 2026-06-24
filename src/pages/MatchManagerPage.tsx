@@ -140,7 +140,16 @@ export default function MatchManagerPage({ userMatches, sampleMatches, onChange,
 
   return <main className="page manager-page">
     <button className="secondary-action" onClick={onBack}>← 홈으로 돌아가기</button>
-    <section className="hero manager-hero"><p>Match Data Manager</p><h1>경기 데이터 관리</h1><span>현재는 로컬 샘플/사용자 추가 경기 기반으로 작동합니다. 실시간 API 연동은 추후 확장 예정입니다.</span><small>예측은 재미용 시뮬레이션이며 실제 결과를 보장하지 않습니다.</small></section>
+    <section className="hero manager-hero"><p>Match Data Manager</p><h1>경기 데이터 관리</h1><span>현재는 직접 입력 또는 로컬 팀 사전 기반입니다. 추후 API 연결 시 팀 검색과 최근 지표를 자동으로 불러올 수 있습니다.</span><small>이 예측은 재미용 시뮬레이션이며 실제 결과를 보장하지 않습니다.</small></section>
+
+    <section className="api-notice manager-notice" aria-label="경기 관리 데이터 안내">
+      <div><p>Team Dictionary</p><h2>팀 자동완성 안내</h2></div>
+      <ul>
+        <li>지금은 직접 입력 또는 로컬 팀 사전 기반입니다.</li>
+        <li>추후 API 연결 시 팀 검색과 최근 지표를 자동으로 불러올 수 있습니다.</li>
+        <li>자동완성 후보는 현재 로컬 팀 사전에서 제공됩니다.</li>
+      </ul>
+    </section>
 
     {message && <p className="manager-message">{message}</p>}
 

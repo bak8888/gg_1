@@ -121,7 +121,7 @@ const normalizePredictionHistoryItem = (item: unknown): PredictionHistoryItem | 
         .map((log) => ({ second: Number((log as { second?: unknown }).second), text: String((log as { text?: unknown }).text ?? '') }))
         .filter((log) => Number.isFinite(log.second) && log.text.trim().length > 0)
       : [],
-    matchSource: raw.matchSource === 'custom' || raw.matchSource === 'api' ? raw.matchSource : 'sample',
+    matchSource: raw.matchSource === 'custom' || raw.matchSource === 'mock-api' || raw.matchSource === 'api' ? raw.matchSource : 'sample',
   };
 };
 

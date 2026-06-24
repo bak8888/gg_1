@@ -1,5 +1,8 @@
 export type PredictionOutcome = 'HOME' | 'DRAW' | 'AWAY';
 export type SimulationEventType = 'attack' | 'press' | 'counter' | 'shot' | 'goal' | 'save' | 'miss';
+export type DataSource = 'sample' | 'custom' | 'mock-api' | 'api';
+export type MatchSource = DataSource;
+export type DataProviderMode = 'local' | 'mock-api' | 'future-api';
 
 export interface TeamStats {
   recentForm: number;
@@ -10,7 +13,6 @@ export interface TeamStats {
   fatigue: number;
 }
 
-
 export interface TeamSuggestion {
   id: string;
   name: string;
@@ -18,14 +20,20 @@ export interface TeamSuggestion {
   league: string;
   aliases: string[];
   defaultStats: TeamStats;
+  source?: DataSource;
 }
 
-export interface ApiTeamRaw {
-  [key: string]: unknown;
-}
+// 실제 축구 데이터 API 응답 연결 시 provider별 응답 필드를 안전하게 좁혀가기 위한 확장형 raw 타입입니다.
+export type ApiFixtureRaw = Record<string, unknown>;
+export type ApiTeamRaw = Record<string, unknown>;
+export type ApiTeamStatsRaw = Record<string, unknown>;
+export type ApiMatchRaw = ApiFixtureRaw;
 
-export interface ApiMatchRaw {
-  [key: string]: unknown;
+export interface NormalizedDataResult<T> {
+  data: T | null;
+  source: DataSource;
+  raw?: Record<string, unknown>;
+  error?: string;
 }
 
 export interface Team {
@@ -35,9 +43,6 @@ export interface Team {
   stats: TeamStats;
 }
 
-export type DataSource = 'sample' | 'custom' | 'api';
-export type MatchSource = DataSource;
-
 export interface Match {
   id: string;
   league: string;
@@ -45,6 +50,7 @@ export interface Match {
   awayTeam: Team;
   kickoffTime: string;
   source?: MatchSource;
+  lastUpdatedAt?: string;
 }
 
 export interface SimulationLogEntry {
@@ -76,7 +82,6 @@ export interface SimulationEvent {
   homePlayers: Array<{ x: number; y: number }>;
   awayPlayers: Array<{ x: number; y: number }>;
 }
-
 
 export interface PredictionHistoryItem {
   id: string;
