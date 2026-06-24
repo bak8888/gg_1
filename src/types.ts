@@ -10,6 +10,24 @@ export interface TeamStats {
   fatigue: number;
 }
 
+
+export interface TeamSuggestion {
+  id: string;
+  name: string;
+  country: string;
+  league: string;
+  aliases: string[];
+  defaultStats: TeamStats;
+}
+
+export interface ApiTeamRaw {
+  [key: string]: unknown;
+}
+
+export interface ApiMatchRaw {
+  [key: string]: unknown;
+}
+
 export interface Team {
   name: string;
   shortName: string;
@@ -17,7 +35,8 @@ export interface Team {
   stats: TeamStats;
 }
 
-export type MatchSource = 'sample' | 'custom';
+export type DataSource = 'sample' | 'custom' | 'api';
+export type MatchSource = DataSource;
 
 export interface Match {
   id: string;
@@ -56,4 +75,26 @@ export interface SimulationEvent {
   ball: { x: number; y: number };
   homePlayers: Array<{ x: number; y: number }>;
   awayPlayers: Array<{ x: number; y: number }>;
+}
+
+
+export interface PredictionHistoryItem {
+  id: string;
+  savedAt: string;
+  league: string;
+  homeTeamName: string;
+  awayTeamName: string;
+  kickoffTime: string;
+  expectedScore: {
+    home: number;
+    away: number;
+  };
+  expectedOutcome: PredictionOutcome;
+  confidence: number;
+  reasons: string[];
+  flowSummary: string;
+  keyPoint: string;
+  riskFactor: string;
+  simulationLog: SimulationLogEntry[];
+  matchSource: MatchSource;
 }

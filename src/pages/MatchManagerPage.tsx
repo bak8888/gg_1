@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Match, TeamStats } from '../types';
+import { Match, TeamStats, TeamSuggestion } from '../types';
+import { searchTeamsLocal } from '../utils/dataProvider';
 import { clearUserMatches, deleteUserMatch, normalizeUserMatch, saveUserMatches } from '../utils/storage';
 
 const statFields: Array<{ key: keyof TeamStats; label: string }> = [
@@ -29,14 +30,31 @@ export default function MatchManagerPage({ userMatches, sampleMatches, onChange,
   const [editingId, setEditingId] = useState<string | null>(null);
   const [jsonText, setJsonText] = useState('');
   const [message, setMessage] = useState('');
+  const [focusedTeamInput, setFocusedTeamInput] = useState<'homeTeam' | 'awayTeam' | null>(null);
 
   const exportJson = useMemo(() => JSON.stringify(userMatches, null, 2), [userMatches]);
+  const homeSuggestions = useMemo(() => searchTeamsLocal(form.homeTeam.name), [form.homeTeam.name]);
+  const awaySuggestions = useMemo(() => searchTeamsLocal(form.awayTeam.name), [form.awayTeam.name]);
 
   const updateForm = (patch: Partial<Match>) => setForm((prev) => ({ ...prev, ...patch }));
   const updateTeam = (side: 'homeTeam' | 'awayTeam', name: string) => setForm((prev) => ({
     ...prev,
     [side]: { ...prev[side], name, shortName: shortName(name, side === 'homeTeam' ? 'HOM' : 'AWY') },
   }));
+  const applyTeamSuggestion = (side: 'homeTeam' | 'awayTeam', suggestion: TeamSuggestion) => {
+    setForm((prev) => ({
+      ...prev,
+      league: prev.league || suggestion.league,
+      [side]: {
+        ...prev[side],
+        name: suggestion.name,
+        shortName: shortName(suggestion.name, side === 'homeTeam' ? 'HOM' : 'AWY'),
+        stats: { ...suggestion.defaultStats },
+      },
+    }));
+    setFocusedTeamInput(null);
+    setMessage(`${suggestion.name} 기본 지표를 입력했습니다. 필요하면 수치를 직접 수정하세요.`);
+  };
   const updateStat = (side: 'homeTeam' | 'awayTeam', key: keyof TeamStats, value: number) => setForm((prev) => ({
     ...prev,
     [side]: { ...prev[side], stats: { ...prev[side].stats, [key]: clamp(value) } },
@@ -97,6 +115,22 @@ export default function MatchManagerPage({ userMatches, sampleMatches, onChange,
     setMessage('사용자 추가 경기 목록을 초기화했습니다.');
   };
 
+  const renderTeamInput = (side: 'homeTeam' | 'awayTeam', label: string, suggestions: TeamSuggestion[]) => <label className="team-autocomplete">{label}
+    <input
+      value={form[side].name}
+      onChange={(event: any) => updateTeam(side, event.target.value)}
+      onFocus={() => setFocusedTeamInput(side)}
+      placeholder="팀명, 국가, 리그, 별칭 검색"
+    />
+    {focusedTeamInput === side && suggestions.length > 0 && <div className="suggestion-list" role="listbox">
+      {suggestions.map((suggestion) => <button type="button" className="suggestion-option" key={suggestion.id} onMouseDown={() => applyTeamSuggestion(side, suggestion)}>
+        <strong>{suggestion.name}</strong>
+        <span>{suggestion.league} · {suggestion.country}</span>
+        <small>{suggestion.aliases.slice(0, 3).join(', ')}</small>
+      </button>)}
+    </div>}
+  </label>;
+
   const renderStats = (side: 'homeTeam' | 'awayTeam') => <div className="stat-editor">
     {statFields.map((field) => <label key={`${side}-${field.key}`}>{field.label}
       <input type="range" min="0" max="100" value={form[side].stats[field.key]} onChange={(event: any) => updateStat(side, field.key, Number(event.target.value))} />
@@ -106,7 +140,7 @@ export default function MatchManagerPage({ userMatches, sampleMatches, onChange,
 
   return <main className="page manager-page">
     <button className="secondary-action" onClick={onBack}>← 홈으로 돌아가기</button>
-    <section className="hero manager-hero"><p>Match Data Manager</p><h1>경기 데이터 관리</h1><span>샘플 경기 {sampleMatches.length}개와 내가 추가한 경기 {userMatches.length}개를 함께 관리합니다.</span></section>
+    <section className="hero manager-hero"><p>Match Data Manager</p><h1>경기 데이터 관리</h1><span>현재는 로컬 샘플/사용자 추가 경기 기반으로 작동합니다. 실시간 API 연동은 추후 확장 예정입니다.</span><small>예측은 재미용 시뮬레이션이며 실제 결과를 보장하지 않습니다.</small></section>
 
     {message && <p className="manager-message">{message}</p>}
 
@@ -116,8 +150,8 @@ export default function MatchManagerPage({ userMatches, sampleMatches, onChange,
         <div className="form-grid">
           <label>리그명<input value={form.league} onChange={(event: any) => updateForm({ league: event.target.value })} /></label>
           <label>경기 시간<input value={form.kickoffTime} onChange={(event: any) => updateForm({ kickoffTime: event.target.value })} placeholder="2026-06-24 20:00" /></label>
-          <label>홈팀 이름<input value={form.homeTeam.name} onChange={(event: any) => updateTeam('homeTeam', event.target.value)} /></label>
-          <label>원정팀 이름<input value={form.awayTeam.name} onChange={(event: any) => updateTeam('awayTeam', event.target.value)} /></label>
+          {renderTeamInput('homeTeam', '홈팀 이름', homeSuggestions)}
+          {renderTeamInput('awayTeam', '원정팀 이름', awaySuggestions)}
         </div>
         <div className="team-stat-columns">
           <section><h3>홈팀 지표</h3>{renderStats('homeTeam')}</section>
